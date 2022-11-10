@@ -7,7 +7,7 @@ COIN_SCALING = 0.25
 
 DEFAULT_SCREEN_WIDTH = 800
 DEFAULT_SCREEN_HEIGHT = 600
-SCREEN_TITLE = "Sprite Move with Scrolling Screen Example"
+SCREEN_TITLE = "Maze Game"
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.

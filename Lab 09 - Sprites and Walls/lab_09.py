@@ -22,6 +22,9 @@ class MyGame(arcade.Window):
         """
         super().__init__(width, height, title, resizable=True)
 
+        # Hide mouse cursor
+        self.set_mouse_visible(False)
+
         # Sprite lists
         self.player_list = None
         self.wall_list = None

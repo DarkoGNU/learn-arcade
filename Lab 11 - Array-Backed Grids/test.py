@@ -33,7 +33,7 @@ class MyGame(arcade.Window):
         Set up the application.
         """
         super().__init__(width, height)
-        # Create a 2 dimensional array. A two-dimensional
+        # Create a 2 dimensional array. A two dimensional
         # array is simply a list of lists.
         self.grid = []
         for row in range(ROW_COUNT):
@@ -78,19 +78,22 @@ class MyGame(arcade.Window):
         column = x // (WIDTH + MARGIN)
         row = y // (HEIGHT + MARGIN)
 
+        print(f"Click coordinates: ({x}, {y}). Grid coordinates: ({row}, {column})")
+
         # Make sure we are on-grid. It is possible to click in the upper right
         # corner in the margin and go to a grid location that doesn't exist
-        for x, y in ((row - 1, column), (row + 1, column), (row, column), (row, column - 1), (row, column + 1)):
-            if ROW_COUNT > x >= 0 and COLUMN_COUNT > y >= 0:
-                # Flip the location between 1 and 0.
-                if self.grid[x][y] == 0:
-                    self.grid[x][y] = 1
-                else:
-                    self.grid[x][y] = 0
+        if row < ROW_COUNT and column < COLUMN_COUNT:
+
+            # Flip the location between 1 and 0.
+            if self.grid[row][column] == 0:
+                self.grid[row][column] = 1
+            else:
+                self.grid[row][column] = 0
 
 
 def main():
-    MyGame(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT)
     arcade.run()
 
 

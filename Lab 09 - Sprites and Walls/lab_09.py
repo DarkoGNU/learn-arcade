@@ -6,8 +6,6 @@ Artwork from https://kenney.nl
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.sprite_move_scrolling
 """
-import copy
-
 from config import *
 
 import random
@@ -27,12 +25,19 @@ class MyGame(arcade.Window):
         # Sprite lists
         self.player_list = None
         self.wall_list = None
+        self.coin_list = None
 
         # Wall grid - for coin placement
         self.wall_grid = None
 
-        # Set up the player
+        # Initialize the player
         self.player_sprite = None
+
+        # Initialize the score
+        self.score = None
+
+        # Initialize game over
+        self.game_over = None
 
         # Physics engine so we don't run into walls.
         self.physics_engine = None
@@ -43,10 +48,59 @@ class MyGame(arcade.Window):
         self.up_pressed = False
         self.down_pressed = False
 
+        # Initialize the cameras
+        self.camera_sprites = None
+        self.camera_gui = None
+
+        # Sounds
+        self.music = None
+        self.coin_sound = None
+
+    def setup(self):
+        """ Set up the game and initialize the variables. """
+        # Sprite lists
+        self.player_list = arcade.SpriteList(use_spatial_hash=False)
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
+        self.coin_list = arcade.SpriteList(use_spatial_hash=True)
+
+        # Set up the player
+        self.player_sprite = arcade.Sprite(PLAYER_TEXTURE,
+                                           scale=PLAYER_SCALING)
+        self.player_sprite.center_x = MAZE_WIDTH / 2 * WALL_WIDTH
+        self.player_sprite.center_y = MAZE_HEIGHT / 2 * WALL_HEIGHT
+        self.player_list.append(self.player_sprite)
+
         # Create the cameras. One for the GUI, one for the sprites.
         # We scroll the 'sprite world', but not the GUI.
         self.camera_sprites = arcade.Camera(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT)
         self.camera_gui = arcade.Camera(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT)
+
+        # Set up the score
+        self.score = 0
+
+        # Set up game over
+        self.game_over = False
+
+        # Initialize the wall grid
+        self.wall_grid = tuple([False for x in range(MAZE_WIDTH + 1)] for x in range(MAZE_HEIGHT + 1))
+
+        # Create the map
+        self.create_walls()
+        self.create_maze(MAZE_HEIGHT, 0, 0, MAZE_WIDTH)
+
+        # Randomly place the coins
+        self.place_coins()
+
+        # Create the physics engine
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+
+        # Load the sounds, play the music
+        self.music = arcade.load_sound(MUSIC)
+        self.coin_sound = arcade.load_sound(COIN_SOUND)
+        self.music.play(volume=0.2, loop=True)
+
+        # Set the background color
+        arcade.set_background_color(arcade.color.AMAZON)
 
     def make_wall(self, center_x, center_y):
         texture = WALL_TEXTURES[random.randrange(4)]
@@ -54,6 +108,14 @@ class MyGame(arcade.Window):
         self.wall_list.append(arcade.Sprite(
                 filename=texture, scale=SPRITE_SCALING,
                 center_x=center_x, center_y=center_y))
+
+    def make_coin(self, center_x, center_y):
+        texture = COIN_TEXTURE
+
+        self.coin_list.append(arcade.Sprite(
+            filename=texture, scale=COIN_SCALING,
+            center_x=center_x, center_y=center_y
+        ))
 
     def create_walls(self):
         for row in range(MAZE_HEIGHT):
@@ -142,40 +204,38 @@ class MyGame(arcade.Window):
     def grid_to_sprites(self):
         """ Super useful for debugging! """
         for row in range(len(self.wall_grid)):
-            for column in range(len(self.wall_grid)):
+            for column in range(len(self.wall_grid[row])):
                 if self.wall_grid[row][column]:
                     self.make_wall((MAZE_WIDTH + 1) * WALL_WIDTH + column * WALL_WIDTH, row * WALL_HEIGHT)
 
-    def setup(self):
-        """ Set up the game and initialize the variables. """
-        # Sprite lists
-        self.player_list = arcade.SpriteList(use_spatial_hash=False)
-        self.wall_list = arcade.SpriteList(use_spatial_hash=False)
+    def place_coins(self):
+        empty_places = []
 
-        # Set up the player
-        self.player_sprite = arcade.Sprite(PLAYER_TEXTURE,
-                                           scale=0.5)
-        self.player_sprite.center_x = MAZE_WIDTH / 2 * WALL_WIDTH
-        self.player_sprite.center_y = MAZE_HEIGHT / 2 * WALL_HEIGHT
-        self.player_list.append(self.player_sprite)
+        for row in range(len(self.wall_grid)):
+            for column in range(len(self.wall_grid[row])):
+                if not self.wall_grid[row][column]:
+                    empty_places.append((row, column))
 
-        # Initialize the wall grid
-        self.wall_grid = tuple([False for x in range(MAZE_WIDTH + 1)] for x in range(MAZE_HEIGHT + 1))
+        coin_locations = random.sample(empty_places, COIN_COUNT) if len(empty_places) >= COIN_COUNT else empty_places
 
-        # Create the map
-        self.create_walls()
-        self.create_maze(MAZE_HEIGHT, 0, 0, MAZE_WIDTH)
-
-        # Randomly place the coins
-
-        # Create the physics engine
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-
-        # Set the background color
-        arcade.set_background_color(arcade.color.AMAZON)
+        for location in coin_locations:
+            self.make_coin(location[1] * WALL_WIDTH, location[0] * WALL_HEIGHT)
 
     def on_draw(self):
         """ Render the screen. """
+
+        if self.game_over:
+            self.clear(arcade.color.BLACK)
+
+            arcade.draw_text(
+                f"Game Over. Final score: {self.score}",
+                self.width / 2,
+                self.height / 2,
+                arcade.color.WHITE,
+                30,
+                anchor_x="center"
+            )
+            return
 
         # This command has to happen before we start drawing
         self.clear()
@@ -186,6 +246,7 @@ class MyGame(arcade.Window):
         # Draw all the sprites.
         self.wall_list.draw()
         self.player_list.draw()
+        self.coin_list.draw()
 
         # Select the (unscrolled) camera for our GUI
         self.camera_gui.use()
@@ -196,7 +257,8 @@ class MyGame(arcade.Window):
                                      width=self.width,
                                      height=40,
                                      color=arcade.color.ALMOND)
-        text = f"Player position: ({self.player_sprite.center_x} {self.player_sprite.center_y})"
+        text = f"Score: {self.score}, " \
+               f"coins left: {len(self.coin_list)}"
         arcade.draw_text(text, 10, 10, arcade.color.BLACK_BEAN, 20)
 
     def on_key_press(self, key, modifiers):
@@ -226,6 +288,10 @@ class MyGame(arcade.Window):
     def on_update(self, delta_time):
         """ Movement and game logic """
 
+        if len(self.coin_list) <= 0:
+            self.game_over = True
+            return
+
         # Calculate speed based on the keys pressed
         self.player_sprite.change_x = 0
         self.player_sprite.change_y = 0
@@ -246,6 +312,14 @@ class MyGame(arcade.Window):
 
         # Scroll the screen to the player
         self.scroll_to_player()
+
+        # Check if the player collected any coins
+        coin_hits = arcade.check_for_collision_with_list(self.player_sprite, self.coin_list)
+
+        for hit in coin_hits:
+            self.score += 1
+            hit.remove_from_sprite_lists()
+            self.coin_sound.play()
 
     def scroll_to_player(self):
         """

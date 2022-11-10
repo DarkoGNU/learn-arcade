@@ -1,1 +1,7 @@
 arcade
+openpyxl
+matplotlib
+numpy
+bs4
+beautifulsoup4
+pyglet

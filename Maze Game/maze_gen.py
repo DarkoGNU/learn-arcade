@@ -4,11 +4,11 @@ import random
 
 
 class MapBuilder:
-    def __init__(self, width, height, count_count):
+    def __init__(self, width, height, coin_count):
         """ Konstruktor """
         self.width = width
         self.height = height
-        self.count_count = count_count
+        self.coin_count = coin_count
 
         # Inicjalizuj tablicę z mapą
         self.wall_grid = tuple([False for x in range(self.width + 1)] for x in range(self.height + 1))
@@ -136,8 +136,8 @@ class MapBuilder:
                     empty_places.append((row, column))
 
         # Z listy pustych miejsc wylosuj te, gdzie faktycznie zostaną utworzone pieniążki
-        coin_locations = random.sample(empty_places, self.count_count)\
-            if len(empty_places) > self.count_count\
+        coin_locations = random.sample(empty_places, self.coin_count)\
+            if len(empty_places) > self.coin_count\
             else empty_places
 
         # Po kolei utwórz wszystkie pieniążki

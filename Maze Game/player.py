@@ -68,10 +68,10 @@ class Player(arcade.Sprite):
             return
 
         # Animacja chodzenia
-        self.cur_texture += 2
-        if self.cur_texture // 5 > 7:
+        self.cur_texture += 1
+        if self.cur_texture // 3 > 7:
             self.cur_texture = 0
-        self.texture = self.walk_textures[self.cur_texture // 5][
+        self.texture = self.walk_textures[self.cur_texture // 3][
             self.character_face_direction
         ]
 
